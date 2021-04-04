@@ -64,24 +64,24 @@ class Test_Part3(unittest.TestCase):
         self.assertEqual(self.wy_list[0].info(),"Bighorn Canyon (National Recreation Area): Lovell, WY 82431")
 
 
-# class Test_Part4(unittest.TestCase):
-#     def setUp(self):
-#         self.site_mi2 = nps.get_site_instance('https://www.nps.gov/slbe/index.htm')
-#         self.site_wy2 = nps.get_site_instance('https://www.nps.gov/fobu/index.htm')
-#         self.near_mi = nps.get_nearby_places(self.site_mi2)
-#         self.near_wy = nps.get_nearby_places(self.site_wy2)
+class Test_Part4(unittest.TestCase):
+    def setUp(self):
+        self.site_mi2 = nps.get_site_instance('https://www.nps.gov/slbe/index.htm')
+        self.site_wy2 = nps.get_site_instance('https://www.nps.gov/fobu/index.htm')
+        self.near_mi = nps.get_nearby_places(self.site_mi2)
+        self.near_wy = nps.get_nearby_places(self.site_wy2)
 
-#     def test_4_1_basic(self):
-#         self.assertEqual(type(self.near_mi), dict)        
-#         self.assertEqual(type(self.near_wy), dict)        
+    def test_4_1_basic(self):
+        self.assertEqual(type(self.near_mi), dict)        
+        self.assertEqual(type(self.near_wy), dict)        
     
-#     def test_4_2_contents(self):
-#         self.assertEqual(len(self.near_mi.keys()), 7)
-#         self.assertEqual(self.near_mi['resultsCount'], 10)
-#         self.assertEqual(len(self.near_wy.keys()), 7)
-#         self.assertEqual(self.near_wy['resultsCount'], 10)
-#         self.assertEqual(self.near_wy['options']['maxMatches'], 10)
-#         self.assertEqual(self.near_wy['options']['radius'], 10)
+    def test_4_2_contents(self):
+        self.assertEqual(len(self.near_mi.keys()), 7)
+        self.assertEqual(self.near_mi['resultsCount'], 10)
+        self.assertEqual(len(self.near_wy.keys()), 7)
+        self.assertEqual(self.near_wy['resultsCount'], 10)
+        self.assertEqual(self.near_wy['options']['maxMatches'], 10)
+        self.assertEqual(self.near_wy['options']['radius'], 10)
 
 
 if __name__ == '__main__':

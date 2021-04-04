@@ -3,3 +3,4 @@ __pycache__
 index_cache.json
 state_cache.json
 site_cache.json
+places_cache.json

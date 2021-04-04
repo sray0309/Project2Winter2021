@@ -30,7 +30,7 @@ class NationalSite:
     phone: string
         the phone of a national site (e.g. '(616) 319-7906', '307-344-7381')
     '''
-    def __init__(self, category, name, address, zipcode, phone):
+    def __init__(self, category=None, name=None, address=None, zipcode=None, phone=None):
         self.category = category
         self.name = name
         self.address = address
@@ -109,8 +109,14 @@ def get_site_instance(site_url):
         soup = BeautifulSoup(response.text, 'html.parser')
         name = soup.find('a', class_='Hero-title').text.strip()
         category = soup.find('span', class_='Hero-designation').text.strip()
-        address = soup.find('span', itemprop='addressLocality').text.strip() + ', ' + soup.find('span', itemprop='addressRegion').text.strip()
-        zipcode = soup.find('span', itemprop='postalCode', class_='postal-code').text.strip()
+        try:
+            address = soup.find('span', itemprop='addressLocality').text.strip() + ', ' + soup.find('span', itemprop='addressRegion').text.strip()
+        except:
+            address = None
+        try:
+            zipcode = soup.find('span', itemprop='postalCode', class_='postal-code').text.strip()
+        except:
+            zipcode = None
         phone = soup.find('span', itemprop='telephone', class_='tel').text.strip()
         cache[site_url] = {
             'name': name,
@@ -183,20 +189,120 @@ def get_nearby_places(site_object):
     dict
         a converted API return from MapQuest API
     '''
-    pass
+    if site_object.zipcode == None:
+        return {}
+    else:
+        BASE_URL = 'http://www.mapquestapi.com/search/v2/radius'
+        params = {
+            'key': secrets.consumer_key,
+            'origin': site_object.zipcode,
+            'radius': 10,
+            'units': 'm',
+            'maxMatches': 10,
+            'ambiguities': 'ignore',
+            'outFormat': 'json'
+        }
+        try:
+            cache_file = open('places_cache.json', 'r')
+            cache_file_contents = cache_file.read()
+            cache = json.loads(cache_file_contents)
+            cache_file.close()
+        except:
+            cache = {}
+
+        if (site_object.zipcode in list(cache.keys())):
+            print('Using cache')
+            return cache[site_object.zipcode]
+        else:
+            print('Fetching')
+            response = requests.get(BASE_URL, params=params)
+            cache[site_object.zipcode] = response.json()
+            cache_file = open('places_cache.json', 'w')
+            cache_file_contents = json.dumps(cache)
+            cache_file.write(cache_file_contents)
+            cache_file.close()
+            return cache[site_object.zipcode]
     
 
 if __name__ == "__main__":
-    while(True):
-        state_name = input('Enter a state name or exit:\n').lower()
+
+    ################# self test for part 4 ####################
+
+    # a = NationalSite(zipcode='48105')
+    # data = get_nearby_places(a)['searchResults']
+    # print(data)
+    # for place in data:
+    #     name = place['name']
+    #     category = place['fields']['group_sic_code_name']
+    #     if (category == ''):
+    #         category = 'no category'
+    #     address = place['fields']['address']
+    #     if (address == ''):
+    #         address = 'no address'
+    #     city = place['fields']['city']
+    #     if(city == ''):
+    #         city = 'no city'
+
+    #     print(name, category, address, city)
+
+    ###########################################################
+
+
+
+    while(True): # loop for state sites
+        finish = 0
+        state_name = input('Enter a state name(e.g. Michigan or michigan) or "exit":\n').lower()
         if (state_name == 'exit'):
-            break
+            break #finish program
         else:
             state_list = build_state_url_dict()
-            site_list = get_sites_for_state(state_list[state_name])
-            print('-' * (30+len(state_name)))
-            print(f'| list of national sites in {state_name} |')
-            print('-' * (30+len(state_name)))
-            for i in range(len(site_list)):
-                print(f'[{i+1}] {site_list[i].info()}')
+            if state_name not in list(state_list.keys()):
+                print('[ERROR] Enter proper state name')
+                continue
+            else:
+                site_list = get_sites_for_state(state_list[state_name])
+                print('-' * (30+len(state_name)))
+                print(f'| list of national sites in {state_name} |')
+                print('-' * (30+len(state_name)))
+                for i in range(len(site_list)):
+                    print(f'[{i+1}] {site_list[i].info()}')
+                while (True): # loop for places near site
+                    detail_num = input('Choose the number for detail search or "exit" or "back"\n')
+                    if (detail_num == 'exit'):
+                        finish = 1
+                        break # finish program
+                    elif (detail_num == 'back'):
+                        break # back to enter state name
+                    else:
+                        if (not detail_num.isnumeric()):
+                            print('[ERROR] Invalid input, please enter an integer')
+                            continue
+                        elif int(detail_num) < 1 or int(detail_num) > len(site_list):
+                            print('[ERROR] Number out of range')
+                            continue
+                        else:
+                            site_name = site_list[int(detail_num)-1].name
+                            print('-' * (16+len(site_name)))
+                            print(f'| Places near {site_name} |')
+                            print('-' * (16+len(site_name)))
+                            if get_nearby_places(site_list[int(detail_num)-1]) == {}:
+                                print('[ERROR] No zip code for this site')
+                                continue
+                            else:
+                                data = get_nearby_places(site_list[int(detail_num)-1])['searchResults']
+                                for place in data:
+                                    place_name = place['name']
+                                    place_category = place['fields']['group_sic_code_name']
+                                    if (place_category == ''):
+                                        place_category = 'no category'
+                                    place_address = place['fields']['address']
+                                    if (place_address == ''):
+                                        place_address = 'no address'
+                                    place_city = place['fields']['city']
+                                    if(place_city == ''):
+                                        place_city = 'no city'
+
+                                    print(f"- {place_name} ({place_category}): {place_address}, {place_city}")
+                if (finish):
+                    break #finish program
     
